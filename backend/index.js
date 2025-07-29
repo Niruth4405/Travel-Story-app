@@ -88,7 +88,7 @@ app.post("/create-account", async (req, res) => {
 });
 
 //Login:
-app.get("/login", async (req, res) => {
+app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res
@@ -254,7 +254,7 @@ app.post("/edit-story/:id", authenticateToken, async (req, res) => {
   const { userId } = req.user;
 
   //validate required fields
-  if (!title || !story || !imageUrl || !visitedDate || !visitedLocation) {
+  if (!title || !story || !visitedDate || !visitedLocation) {
     return res.status(400).json({
       error: true,
       message: "Title, story, imageUrl, and visitedDate are required",
@@ -338,7 +338,9 @@ app.put("/update-is-favourite/:id", authenticateToken, async (req, res) => {
     const travelStory = await TravelStory.findOne({ _id: id, userId: userId });
 
     if (!travelStory) {
-      return res.status(404).json({ error: true, message: "Travel story not found!" });
+      return res
+        .status(404)
+        .json({ error: true, message: "Travel story not found!" });
     }
 
     travelStory.isFavourite = isFavourite;
@@ -350,7 +352,50 @@ app.put("/update-is-favourite/:id", authenticateToken, async (req, res) => {
   }
 });
 
+//Search Travel Stories:
+app.get("/search-stories", authenticateToken, async (req, res) => {
+  const { query } = req.query;
+  const { userId } = req.user;
 
+  if (!query) {
+    return res
+      .status(400)
+      .json({ error: true, message: "Please enter a search query" });
+  }
+  try {
+    const searchResults = await TravelStory.find({
+      userId: userId,
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { story: { $regex: query, $options: "i" } },
+        { visitedLocation: { $regex: query, $options: "i" } },
+      ],
+    }).sort({ isFavourite: -1 });
+    res.status(200).json({ stories: searchResults });
+  } catch (error) {
+    return res.status(500).json({ error: true, message: error.message });
+  }
+});
+
+//Filter travel stories by date range
+app.get("/travel-stories/filter", authenticateToken, async (req, res) => {
+  const { startDate, endDate } = req.query;
+  const { userId } = req.user;
+
+  try {
+    //Convert startDate and endDate from milliseconds to Date objects
+    const start = new Date(parseInt(startDate));
+    const end = new Date(parseInt(endDate));
+    //Find travel stories that belong to the authenticated user and fall within the date range
+    const filteredStories = await TravelStory.find({
+      userId: userId,
+      visitedDate: { $gte: start, $lte: end },
+    }).sort({ isFavourite: -1 });
+    res.status(200).json({ stories: filteredStories });
+  } catch (error) {
+    return res.status(500).json({ error: true, message: error.message });
+  }
+});
 
 // Start server
 const PORT = 8000;
