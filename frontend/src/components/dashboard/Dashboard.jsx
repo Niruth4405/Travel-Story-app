@@ -112,6 +112,7 @@ const Dashboard = () => {
         // Handle unexpected errors
         setError("An unexpected error occurred. Please try again.");
         toast.error("Failed to delete Travel Story")
+        
       }
     }
   };
