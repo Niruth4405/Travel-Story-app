@@ -1,7 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config(); // Load environment variables
 
-const config = require("./config.json");
+// const config = require("./config.json");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -14,7 +14,7 @@ const path = require("path");
 
 // MongoDB connection
 mongoose
-  .connect(config.ConnectionString, {
+  .connect(process.env.ConnectionString, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -398,9 +398,9 @@ app.get("/travel-stories/filter", authenticateToken, async (req, res) => {
 });
 
 // Start server
-const PORT = 8000;
-app.listen(PORT, () => {
-  console.log(`Server started on http://localhost:${PORT}`);
+const port = process.env.PORT || 8000;
+app.listen(port, () => {
+  console.log(`Server started on http://localhost:${port}`);
 });
 
 module.exports = app;
